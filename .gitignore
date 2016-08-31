@@ -1,0 +1,10 @@
+*.png
+*.jpg
+images/*
+
+test.py
+*.pyc
+
+*.json
+.DS_Store
+.idea
