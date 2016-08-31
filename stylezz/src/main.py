@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
-import cv2
 import numpy as np
+import cv2
+import webcolors
 
 import glob
 import time
 
-import webcolors
 
-def detect_objects(imageFile, thresh_area=0.002):
+def detect_objects(imageFile, thresh_area=0.002, top=3):
     print ''
     print "==================="
 
@@ -19,7 +19,6 @@ def detect_objects(imageFile, thresh_area=0.002):
     grayscale_img = cv2.imread(imageFile, 0)
     ret, thresh = cv2.threshold(grayscale_img, 127, 255, 0)
     contours, hierarchy = cv2.findContours(thresh, 1, 2)
-    print len(contours), 'contours in the image.'
 
     # calculate the threshold size
     height, width = grayscale_img.shape[:2]
@@ -29,10 +28,6 @@ def detect_objects(imageFile, thresh_area=0.002):
     # filter out valid contours
     valid_contours = filter(lambda cont: cv2.minAreaRect(cont)[1][0] * \
                                          cv2.minAreaRect(cont)[1][1]>object_threshold, contours)
-    print len(valid_contours), 'contours to consider in the image.'
-    print
-
-
     objects = []
     for cnt in valid_contours:
         rect = cv2.minAreaRect(cnt)
@@ -41,8 +36,10 @@ def detect_objects(imageFile, thresh_area=0.002):
         cv2.drawContours(image, [box], 0, (0,0,0), 1)
         objects.append(box)
 
-    print process(image, objects, 3)
-    cv2.imshow("Contours", image)
+    print
+    top_colors = process(image, objects, top)
+    for index, color in enumerate(top_colors):
+        print '%i. %s' % (index+1, color)
 
 def process(image, objects, top=3):
     colors = {}
@@ -54,7 +51,7 @@ def process(image, objects, top=3):
 
 def process_object(image, box, colors):
     points = get_points(box, image)
-    colors_cur = get_colors(image, points, top=1)
+    colors_cur = get_colors(image, points)
     for k, v in colors_cur.items():
         if colors.__contains__(k):
             colors[k] = colors[k] + v
@@ -82,7 +79,7 @@ def closest_color(bgr):
 def pixel_color(image, p):
     return (image.item(p[0],p[1],0), image.item(p[0],p[1],1), image.item(p[0],p[1],2))
 
-def get_colors(image, points, top=3):
+def get_colors(image, points):
     bgr_dict = dict()
     for point in points:
         color = pixel_color(image, point)
@@ -90,6 +87,7 @@ def get_colors(image, points, top=3):
             bgr_dict[color] = 1
         else:
             bgr_dict[color] = bgr_dict[color] + 1
+
     str_colors = dict()
     for k, v in bgr_dict.items():
         color = convert_color(k)
@@ -102,6 +100,7 @@ def get_colors(image, points, top=3):
 def get_points(box, image):
     r = np.int0(min(radius1(box), radius2(box)))
     c = center(box)
+
     points = []
     for x in xrange(r):
         for y in xrange(r):
@@ -138,10 +137,11 @@ if __name__ == "__main__":
     start = time.time()
     print 'Running script...'
 
-    images = glob.glob("images/*.jpg")
+    images = glob.glob("images/*")
     print len(images), 'images found'
 
     for image in images:
         detect_objects(image)
 
+    print
     print 'Script ran for %.2f seconds' % (time.time() - start)
