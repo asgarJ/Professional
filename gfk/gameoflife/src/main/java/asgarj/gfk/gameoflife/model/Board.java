@@ -8,31 +8,43 @@ import static java.lang.String.format;
 /**
  * Created by asgar on 7/5/17.
  */
-public class Board {
+public class Board implements Cloneable {
+    public static final int DEFAULT_OFFSET = 1;
     public static final char LIVE_CELL = '\u2588';
     public static final char DEAD_CELL = '.';
 
-    private int rows, cols, offset;
-    private boolean[][] cell;
+    private int rowCount, columnCount, offset;
+    private boolean[][] cells;
     private int topOffset, bottomOffset, leftOffset, rightOffset;
 
-    public Board(int rows, int cols, int offset) {
-        this.rows = rows;
-        this.cols = cols;
-        this.offset = offset;
-        cell = new boolean[rows][cols];
-        this.topOffset = rows;
-        this.bottomOffset = rows;
-        this.leftOffset = cols;
-        this.rightOffset = cols;
+    public Board(int rowCount, int columnCount) {
+        this(rowCount, columnCount, DEFAULT_OFFSET);
     }
 
+    public Board(int rowCount, int columnCount, int offset) {
+        this.rowCount = rowCount;
+        this.columnCount = columnCount;
+        this.offset = offset;
+        this.cells = new boolean[rowCount][columnCount];
+        this.topOffset = rowCount;
+        this.bottomOffset = rowCount;
+        this.leftOffset = columnCount;
+        this.rightOffset = columnCount;
+    }
+
+    /**
+     * Static helper method to create an instance of Board.
+     * Resizes the board at the end to make sure that there's some padding on the edges.
+     * @param lines rows of the grid
+     * @param offset desired offset from sides to be maintained after each step.
+     * @return new Board instance
+     */
     public static Board newBoard(List<String> lines, int offset) {
-        int rows = lines.size();
-        int cols = lines.stream().mapToInt(s -> s.length()).max().getAsInt();
-        Board board = new Board(rows, cols, offset);
-        for (int row = 0; row < rows; ++row) {
-            for (int col = 0; col < cols; ++col) {
+        int rowCount = lines.size();
+        int columnCount = lines.stream().mapToInt(s -> s.length()).max().getAsInt();
+        Board board = new Board(rowCount, columnCount, offset);
+        for (int row = 0; row < rowCount; ++row) {
+            for (int col = 0; col < columnCount; ++col) {
                 board.setSingleCell(row, col, lines.get(row).charAt(col) == '*');
             }
         }
@@ -40,17 +52,21 @@ public class Board {
         return board;
     }
 
+    public static Board newBoard(List<String> lines) {
+        return newBoard(lines, DEFAULT_OFFSET);
+    }
+
     public void setSingleCell(int row, int col, boolean alive) {
-        if (row < 0 || row >= rows)
+        if (row < 0 || row >= rowCount)
             throw new IllegalArgumentException(format("row [%d] is out of range", row));
-        if (col < 0 || col >= cols)
+        if (col < 0 || col >= columnCount)
             throw new IllegalArgumentException(format("col [%d] is out of range", col));
-        this.cell[row][col] = alive;
+        this.cells[row][col] = alive;
         if (alive) {
             topOffset = Math.min(topOffset, row);
-            bottomOffset = Math.min(bottomOffset, rows - row - 1);
+            bottomOffset = Math.min(bottomOffset, rowCount - row - 1);
             leftOffset = Math.min(leftOffset, col);
-            rightOffset = Math.min(rightOffset, cols - col - 1);
+            rightOffset = Math.min(rightOffset, columnCount - col - 1);
         }
     }
 
@@ -61,50 +77,50 @@ public class Board {
         if (!resizeRows && !resizeCols) return;
 
         int newTopOffset = offset - topOffset;
-        int newRows = rows + (offset - topOffset) + (offset - bottomOffset);
+        int newRows = rowCount + (offset - topOffset) + (offset - bottomOffset);
 
         int newLeftOffset = offset - leftOffset;
-        int newCols = cols + (offset - leftOffset) + (offset - rightOffset);
+        int newCols = columnCount + (offset - leftOffset) + (offset - rightOffset);
 
         boolean[][] newboard = new boolean[newRows][newCols];
-        for (int row = 0; row < rows; ++row) {
+        for (int row = 0; row < rowCount; ++row) {
             if (newTopOffset + row < 0 || newTopOffset + row >= newRows) continue;
-            for (int col = 0; col < cols; ++col) {
+            for (int col = 0; col < columnCount; ++col) {
                 if (newLeftOffset + col < 0 || newLeftOffset + col >= newCols) continue;
-                newboard[newTopOffset + row][newLeftOffset + col] = cell[row][col];
+                newboard[newTopOffset + row][newLeftOffset + col] = cells[row][col];
             }
         }
-        cell = newboard;
-        rows = newRows;
-        cols = newCols;
+        cells = newboard;
+        rowCount = newRows;
+        columnCount = newCols;
         topOffset = bottomOffset = leftOffset = rightOffset = offset;
     }
 
     public void clear() {
-        this.topOffset = rows;
-        this.bottomOffset = rows;
-        this.leftOffset = cols;
-        this.rightOffset = cols;
+        this.topOffset = rowCount;
+        this.bottomOffset = rowCount;
+        this.leftOffset = columnCount;
+        this.rightOffset = columnCount;
     }
 
-    public boolean[][] getCell() {
-        return cell;
+    public boolean[][] getCells() {
+        return cells;
     }
 
-    public int getRows() {
-        return rows;
+    public int getRowCount() {
+        return rowCount;
     }
 
-    public void setRows(int rows) {
-        this.rows = rows;
+    public void setRowCount(int rowCount) {
+        this.rowCount = rowCount;
     }
 
-    public int getCols() {
-        return cols;
+    public int getColumnCount() {
+        return columnCount;
     }
 
-    public void setCols(int cols) {
-        this.cols = cols;
+    public void setColumnCount(int columnCount) {
+        this.columnCount = columnCount;
     }
 
     public int getOffset() {
@@ -122,23 +138,23 @@ public class Board {
 
         Board board = (Board) o;
 
-        if (rows != board.rows) return false;
-        if (cols != board.cols) return false;
-        return Arrays.deepEquals(cell, board.cell);
+        if (rowCount != board.rowCount) return false;
+        if (columnCount != board.columnCount) return false;
+        return Arrays.deepEquals(cells, board.cells);
     }
 
     @Override
     public int hashCode() {
-        int result = rows;
-        result = 31 * result + cols;
-        result = 31 * result + Arrays.deepHashCode(cell);
+        int result = rowCount;
+        result = 31 * result + columnCount;
+        result = 31 * result + Arrays.deepHashCode(cells);
         return result;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (boolean[] rows : this.cell) {
+        for (boolean[] rows : this.cells) {
             for (boolean alive : rows) {
                 if (alive) {
                     sb.append(LIVE_CELL);
@@ -149,5 +165,13 @@ public class Board {
             sb.append('\n');
         }
         return sb.toString();
+    }
+
+    public Board clone() {
+        Board clone = new Board(rowCount, columnCount, offset);
+        for (int i = 0; i < rowCount; i++)
+            for (int j = 0; j < columnCount; j++)
+                clone.setSingleCell(i, j, this.cells[i][j]);
+        return clone;
     }
 }

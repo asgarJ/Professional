@@ -1,16 +1,10 @@
 package asgarj.gfk.gameoflife.model;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,6 +17,14 @@ public class Game {
     private int step;
     private Board board;
     private Thread thread;
+    private volatile boolean running = true;
+
+    public Game(Board board) {
+        this.step = 0;
+        this.board = board;
+        Runnable r = getRunnable();
+        thread = new Thread(r, "Game of Life");
+    }
 
     public Game(Path inputPath) {
        this(inputPath, DEFAULT_OFFSET);
@@ -42,7 +44,7 @@ public class Game {
 
     private Runnable getRunnable() {
         return () -> {
-            while (true) {
+            while (running) {
                 System.out.printf("------ State %d ------\n", step);
                 System.out.println(board);
                 next();
@@ -59,12 +61,12 @@ public class Game {
      *
      */
     public void next() {
-        boolean[][] temp = new boolean[board.getRows()][board.getCols()];
-        for (int row = 0; row < board.getRows(); ++row)
-            temp[row] = Arrays.copyOf(board.getCell()[row], board.getCols());
+        boolean[][] temp = new boolean[board.getRowCount()][board.getColumnCount()];
+        for (int row = 0; row < board.getRowCount(); ++row)
+            temp[row] = Arrays.copyOf(board.getCells()[row], board.getColumnCount());
         this.board.clear();
-        for (int row = 0; row < board.getRows(); ++row) {
-            for (int col = 0; col < board.getCols(); ++col) {
+        for (int row = 0; row < board.getRowCount(); ++row) {
+            for (int col = 0; col < board.getColumnCount(); ++col) {
                 boolean status = findStatus(row, col, temp);
                 this.board.setSingleCell(row, col, status);
             }
@@ -77,19 +79,19 @@ public class Game {
      * finds the life status of the cell for the next step
      * @param row
      * @param col
-     * @param cell
+     * @param cells
      * @return
      */
-    private boolean findStatus(int row, int col, boolean[][] cell) {
+    private boolean findStatus(int row, int col, boolean[][] cells) {
         int count = 0;
-        for (int i = Math.max(0, row - 1); i <= Math.min(cell.length - 1, row + 1); ++i) {
-            for (int j = Math.max(0, col - 1); j <= Math.min(cell[0].length - 1, col + 1); ++j) {
+        for (int i = Math.max(0, row - 1); i <= Math.min(cells.length - 1, row + 1); ++i) {
+            for (int j = Math.max(0, col - 1); j <= Math.min(cells[0].length - 1, col + 1); ++j) {
                 if (i == row && j == col) continue;
-                if (cell[i][j])
+                if (cells[i][j])
                     count++;
             }
         }
-        return (!cell[row][col] && count == 3) || (cell[row][col] && (count==2 || count==3));
+        return (!cells[row][col] && count == 3) || (cells[row][col] && (count==2 || count==3));
     }
 
     public void start() {
@@ -97,7 +99,7 @@ public class Game {
     }
 
     public void stop() {
-        thread.interrupt();
+        this.running = false;
     }
 
     public int getStep() {
