@@ -76,7 +76,7 @@ public class HealthChecker implements Runnable {
                 return "Too Bad";
             case -1:
                 return "No signal";
-                default: throw new IllegalStateException("Unknown state. @param count must be between -1 and 8 inclusive.");
+            default: throw new IllegalStateException("Unknown state. @param count must be between -1 and 8 inclusive.");
         }
     }
 }
