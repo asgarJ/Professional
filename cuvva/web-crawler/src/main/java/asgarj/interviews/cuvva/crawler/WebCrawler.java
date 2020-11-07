@@ -4,7 +4,6 @@ import asgarj.interviews.cuvva.scraper.WebScraper;
 import asgarj.interviews.cuvva.scraper.WebScraperResult;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,16 +12,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class WebCrawler {
 
     private final String initialUrl;
 
-    private final WebScraper webScraper;
+    private final long timeout;
 
-    private final ReadWriteLock readWriteLock;
+    private final WebScraper webScraper;
 
     private final Executor threadPool;
 
@@ -30,10 +27,10 @@ public class WebCrawler {
 
     private final ConcurrentHashMap<String, Collection<String>> webPageStaticContents;
 
-    public WebCrawler(String initialUrl, WebScraper webScraper) {
+    public WebCrawler(String initialUrl, long timeout, WebScraper webScraper) {
         this.initialUrl = initialUrl;
+        this.timeout = timeout;
         this.webScraper = webScraper;
-        this.readWriteLock = new ReentrantReadWriteLock();
         this.threadPool = Executors.newCachedThreadPool();
         this.processedUrls = new ConcurrentSkipListSet<>();
         this.webPageStaticContents = new ConcurrentHashMap<>();
@@ -44,7 +41,7 @@ public class WebCrawler {
         queue.add(initialUrl);
         processedUrls.add(initialUrl);
         while (true) {
-            var currentUrl = queue.poll(5000L, TimeUnit.MILLISECONDS);
+            var currentUrl = queue.poll(timeout, TimeUnit.MILLISECONDS);
             if (currentUrl == null) {
                 System.out.println("No url found within the configured period of time. Terminating the search..");
                 break;

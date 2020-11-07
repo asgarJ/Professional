@@ -17,7 +17,12 @@ import static java.util.Objects.nonNull;
 public class WebScraper {
 
     private static final WebScraperResult EMPTY_RESULT = new WebScraperResult(EMPTY_LIST, EMPTY_LIST);
-    private static final String CUVVA_COM = "cuvva.com";
+
+    private final String domainBound;
+
+    public WebScraper(String domainBound) {
+        this.domainBound = domainBound;
+    }
 
     public WebScraperResult processUrl(String url) {
         System.out.println("Processing the url: " + url);
@@ -36,7 +41,7 @@ public class WebScraper {
                         .map(URI::create)
                         .filter(uri -> nonNull(uri.getScheme()) && nonNull(uri.getHost()) && nonNull(uri.getPath()))
                         .filter(uri -> uri.getScheme().startsWith("http"))
-                        .filter(uri -> uri.getHost().contains(CUVVA_COM))
+                        .filter(uri -> uri.getHost().contains(domainBound))
                         .map(WebScraper::stripQueryParams)
                         .filter(Objects::nonNull)
                         .map(URI::toString)
