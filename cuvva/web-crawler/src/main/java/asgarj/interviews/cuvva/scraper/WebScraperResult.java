@@ -6,9 +6,9 @@ public class WebScraperResult {
 
     private final Collection<String> internalLinks;
 
-    private final Collection<byte[]> staticContent;
+    private final Collection<String> staticContent;
 
-    public WebScraperResult(Collection<String> internalLinks, Collection<byte[]> staticContent) {
+    public WebScraperResult(Collection<String> internalLinks, Collection<String> staticContent) {
         this.internalLinks = internalLinks;
         this.staticContent = staticContent;
     }
@@ -17,7 +17,7 @@ public class WebScraperResult {
         return internalLinks;
     }
 
-    public Collection<byte[]> getStaticContents() {
+    public Collection<String> getStaticContents() {
         return staticContent;
     }
 }

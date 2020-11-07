@@ -28,15 +28,14 @@ public class WebCrawler {
 
     private final Set<String> processedUrls;
 
-    private final ConcurrentHashMap<String, Collection<byte[]>> webPageStaticContents;
+    private final ConcurrentHashMap<String, Collection<String>> webPageStaticContents;
 
     public WebCrawler(String initialUrl, WebScraper webScraper) {
         this.initialUrl = initialUrl;
         this.webScraper = webScraper;
         this.readWriteLock = new ReentrantReadWriteLock();
         this.threadPool = Executors.newCachedThreadPool();
-        this.processedUrls = new HashSet<>();
-//        new ConcurrentSkipListSet<String>()
+        this.processedUrls = new ConcurrentSkipListSet<>();
         this.webPageStaticContents = new ConcurrentHashMap<>();
     }
 
@@ -45,7 +44,6 @@ public class WebCrawler {
         queue.add(initialUrl);
         processedUrls.add(initialUrl);
         while (true) {
-            System.out.println("Queue size: " + queue.size());
             var currentUrl = queue.poll(5000L, TimeUnit.MILLISECONDS);
             if (currentUrl == null) {
                 System.out.println("No url found within the configured period of time. Terminating the search..");
@@ -58,21 +56,7 @@ public class WebCrawler {
                 System.out.printf("Processing '%s' with %d internal links and %d static contents\n\n",
                         currentUrl, scraperResult.getInternalLinks().size(), scraperResult.getStaticContents().size());
 
-                for (var reachableLink: scraperResult.getInternalLinks()) {
-                    this.readWriteLock.readLock().lock();
-                    if (!processedUrls.contains(reachableLink)) {
-                        this.readWriteLock.readLock().unlock();
-
-                        this.readWriteLock.writeLock().lock();
-                        if (!processedUrls.contains(reachableLink)) {
-                            processedUrls.add(reachableLink);
-                            queue.add(reachableLink);
-                        }
-                        this.readWriteLock.writeLock().unlock();
-                    } else {
-                        this.readWriteLock.readLock().unlock();
-                    }
-                }
+                scraperResult.getInternalLinks().stream().filter(processedUrls::add).forEach(queue::add);
             });
         }
 
