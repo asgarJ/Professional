@@ -52,3 +52,14 @@ class WebCrawler {
     }
 }
 ```
+
+## How to run
+
+Run the below command to run the application
+```shell script
+make run
+```
+
+## Configuration
+
+Configurations reside in the [application.properties](src/main/resources/application.properties) file.
